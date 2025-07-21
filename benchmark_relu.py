@@ -1,33 +1,43 @@
 import torch
+torch.cuda.init()
 import torch.nn.functional as F
 import inferno_relu
-import time
 
-import torch
-torch.cuda.empty_cache()
 
 def benchmark_torch_relu(x, iters=10):
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+
     torch.cuda.synchronize()
-    start = time.perf_counter()
+    start.record()
+
     for _ in range(iters):
         y = F.relu(x)
-    torch.cuda.synchronize()
-    end = time.perf_counter()
 
-    return (end - start) * 1000 / iters
+    end.record()
+    torch.cuda.synchronize()
+
+    return start.elapsed_time(end) / iters  # ms
+
 
 def benchmark_custom_relu(x, y, iters=10):
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+
     torch.cuda.synchronize()
-    start = time.perf_counter()
+    start.record()
+
     for _ in range(iters):
         inferno_relu.relu(x, y)
-    torch.cuda.synchronize()
-    end = time.perf_counter()
 
-    return (end - start) * 1000 / iters
+    end.record()
+    torch.cuda.synchronize()
+
+    return start.elapsed_time(end) / iters  # ms
+
 
 def main():
-    size = 1024 * 1024 * 256
+    size = 1024 * 1024 * 4
     x = torch.randn(size, device='cuda')
     y = torch.empty_like(x)
 

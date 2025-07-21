@@ -1,0 +1,14 @@
+size = 1024 * 1024 * 4 | iters = 10
+torch.relu:      2.026229 ms
+inferno_relu:    0.159634 ms
+speedup:         12.69x
+------------------------------------------------------
+size = 1024 * 1024 * 256 | iters = 10
+torch.relu:      10.613745 ms
+inferno_relu:    8.927849 ms
+speedup:         1.19x
+------------------------------------------------------
+size = 1024 * 1024 * 256 | iters = 10 | Vectorized Memory
+torch.relu:      10.025372 ms
+inferno_relu:    7.780288 ms
+speedup:         1.29x
