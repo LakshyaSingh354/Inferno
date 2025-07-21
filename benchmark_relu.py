@@ -4,7 +4,6 @@ import inferno
 
 torch.cuda.init()
 import torch.nn.functional as F
-import inferno_relu
 
 @inferno.kernel('relu_vec4')
 def fast_relu(x, y):
