@@ -1,8 +1,14 @@
 import torch
+
+import inferno
+
 torch.cuda.init()
 import torch.nn.functional as F
 import inferno_relu
 
+@inferno.kernel('relu_vec4')
+def fast_relu(x, y):
+    return torch.relu(x, y)
 
 def benchmark_torch_relu(x, iters=10):
     start = torch.cuda.Event(enable_timing=True)
@@ -28,7 +34,7 @@ def benchmark_custom_relu(x, y, iters=10):
     start.record()
 
     for _ in range(iters):
-        inferno_relu.relu(x, y)
+        fast_relu(x, y)
 
     end.record()
     torch.cuda.synchronize()

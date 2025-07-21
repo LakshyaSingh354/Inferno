@@ -7,6 +7,13 @@ using namespace std;
 
 __global__ void relu(const float* in, float* out, const int N){
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < N){
+        out[idx] = in[idx] > 0 ? in[idx] : 0;
+    }
+}
+
+__global__ void relu_vec4(const float4* in, float4* out, const int N_vec4){
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (idx < N_vec4) {
         float4 val = in[idx];
@@ -22,6 +29,16 @@ __global__ void relu(const float* in, float* out, const int N){
 
 void relu_launcher(torch::Tensor input, torch::Tensor output){
     int N = input.numel();
+    const float *in_ptr = input.data_ptr<float>();
+    float *out_ptr = output.data_ptr<float>();
+
+    int threads = 512;
+    int blocks = (N + threads - 1) / threads;
+    relu<<<blocks, threads>>>(in_ptr, out_ptr, N);
+}
+
+void relu_launcher_vec4(torch::Tensor input, torch::Tensor output){
+    int N = input.numel();
     TORCH_CHECK(N % 4 == 0, "Input size must be divisible by 4");
     int N_vec4 = N / 4;
 
@@ -35,4 +52,5 @@ void relu_launcher(torch::Tensor input, torch::Tensor output){
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m){
     m.def("relu", &relu_launcher, "Custom ReLU kernel (CUDA)");
+    m.def("relu_vec4", &relu_launcher_vec4, "Custom ReLU kernel (CUDA) for float4");
 }
