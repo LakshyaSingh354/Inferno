@@ -14,8 +14,13 @@ setup(
         ),
         CUDAExtension(
             name="inferno_fused",
-            sources=['fused_matmul_relu.cpp', 'fused_matmul_relu_kernel.cu']
-        )
+            sources=['fused_kernel.cu'],
+            libraries=['cublas'],
+            extra_compile_args={
+                'cxx': [],
+                'nvcc': ['-O2', '-lineinfo']
+            }
+        ),
     ],
     cmdclass={'build_ext': BuildExtension}
 )
