@@ -12,3 +12,53 @@ size = 1024 * 1024 * 256 | iters = 10 | Vectorized Memory
 torch.relu:      10.025372 ms
 inferno_relu:    7.780288 ms
 speedup:         1.29x
+-------------------------------------------------------
+Fused Kernel Benchmarks
+--- Benchmarking size (M, K, N) = (64, 128, 256) ---
+    PyTorch Average Latency: 0.022579 ms
+    Inferno Average Latency: 0.010547 ms
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (128, 256, 512) ---
+    PyTorch Average Latency: 0.033190 ms
+    Inferno Average Latency: 0.014776 ms
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (256, 512, 256) ---
+    PyTorch Average Latency: 0.032195 ms
+    Inferno Average Latency: 0.022866 ms
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (512, 1024, 512) ---
+    PyTorch Average Latency: 0.120852 ms
+    Inferno Average Latency: 0.120146 ms
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (1024, 1024, 1024) ---
+    PyTorch Average Latency: 0.430439 ms
+    Inferno Average Latency: 0.430408 ms
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (2048, 2048, 2048) ---
+    PyTorch Average Latency: 2.661017 ms
+    Inferno Average Latency: 2.549565 ms
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (4096, 4096, 4096) ---
+    PyTorch Average Latency: 20.043243 ms
+    Inferno Average Latency: 20.079800 ms
+    Verification: PASSED
+
+
+================================================================================
+                         BENCHMARKING RESULTS
+================================================================================
+          Size  PyTorch (ms)  Inferno (ms)  Speedup Verified
+    64x128x256      0.022579      0.010547 2.140777      Yes
+   128x256x512      0.033190      0.014776 2.246145      Yes
+   256x512x256      0.032195      0.022866 1.407971      Yes
+  512x1024x512      0.120852      0.120146 1.005876      Yes
+1024x1024x1024      0.430439      0.430408 1.000073      Yes
+2048x2048x2048      2.661017      2.549565 1.043715      Yes
+4096x4096x4096     20.043243     20.079800 0.998179      Yes
+================================================================================
