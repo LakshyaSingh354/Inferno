@@ -33,7 +33,7 @@ class InfernoCompiler:
 
         if analyzer.pattern_found:
             print(f"    ✅ Pattern Found: torch.relu(torch.matmul(...))")
-            print(f"    🔥 Replacing with fused kernel: inferno_ops.fused_gemm_relu")
+            print(f"    🔥 Replacing with fused kernel: inferno_fused.fused_gemm_relu")
 
             # 4. If the pattern is found, return a new function that *only*
             #    calls our fused kernel. This is the "compilation" step.
