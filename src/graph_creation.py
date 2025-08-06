@@ -76,59 +76,72 @@ class Graph:
 # This class is responsible for taking a PyTorch model traced by FX and
 # converting it into our custom Graph IR.
 
+class FlatteningTracer(fx.Tracer):
+    """
+    A custom FX Tracer that does not treat nn.Module instances as leaf modules.
+    This allows us to trace *into* layers like nn.Linear and see the underlying
+    matmul and add operations.
+    """
+    def is_leaf_module(self, m: torch.nn.Module, module_qualname: str) -> bool:
+        # If you want to keep some modules as black boxes, you can add them here.
+        # For now, we want to trace into everything, so we always return False.
+        return False
+
 class TorchFXParser:
     def __init__(self):
+        # Let's make our op_map more robust by using the functions themselves as keys
         self.op_map = {
-            'torch.matmul': 'matmul',
-            'torch.relu': 'relu',
-            # Add other op mappings here as we support them
+            torch.matmul: 'matmul',
+            F.relu: 'relu',
+            F.normalize: 'normalize',
+            torch.add: 'add',
+            F.softmax: 'softmax',
+            # Note: The matmul inside nn.Linear is actually torch.addmm,
+            # but FX often decomposes it. We'll handle what FX gives us.
         }
 
     def parse(self, model: torch.nn.Module, example_inputs: List[torch.Tensor]) -> Graph:
         print(f"--- [Parser] Parsing model: {model.__class__.__name__} ---")
         
-        # 1. Use symbolic_trace to get the FX graph
-        traced_model = fx.symbolic_trace(model)
+        # 1. Use our custom FlatteningTracer
+        tracer = FlatteningTracer()
+        graph = tracer.trace(model)
+        traced_model = fx.GraphModule(tracer.root, graph)
         
-        # Run shape propagation to fill in tensor_meta
+        # Run shape propagation
         fx.passes.shape_prop.ShapeProp(traced_model).propagate(*example_inputs)
         
-        # Create a new, empty Inferno graph
         inferno_graph = Graph(name=model.__class__.__name__)
-
         param_meta_map = {name: p.shape for name, p in model.named_parameters()}
 
-        # 2. Iterate through the nodes of the FX graph
         for fx_node in traced_model.graph.nodes:
             if fx_node.op == 'placeholder':
-                # This is a graph input
                 tensor_meta = fx_node.meta['tensor_meta']
                 tensor_node = TensorNode(fx_node.name, tuple(tensor_meta.shape), str(tensor_meta.dtype))
                 inferno_graph.add_tensor(tensor_node)
                 inferno_graph.inputs.append(fx_node.name)
 
             elif fx_node.op == 'get_attr':
-                # This is a model parameter (e.g., self.weight)
-                # Let's get its metadata from the original model
                 shape = tuple(param_meta_map[fx_node.target])
-                # We assume parameters are float32 for now
-                tensor_node = TensorNode(fx_node.name, shape, "torch.float32") 
+                tensor_node = TensorNode(fx_node.name, shape, "torch.float32")
                 inferno_graph.add_tensor(tensor_node)
                 inferno_graph.add_parameter(tensor_node)
 
             elif fx_node.op == 'call_function':
-                # This is an operation
-                op_type = self.op_map.get(str(fx_node.target), str(fx_node.target))
+                # Use the function object directly for lookup
+                op_type = self.op_map.get(fx_node.target, "unknown_op")
                 
-                # Get input tensor names
-                input_names = [str(arg.name) for arg in fx_node.args]
+                # This needs to handle args and kwargs more robustly
+                input_names = []
+                for arg in fx_node.args:
+                    if isinstance(arg, fx.Node):
+                        input_names.append(arg.name)
+                # We'll ignore kwargs for now for simplicity
                 
-                # Create the output tensor node
                 tensor_meta = fx_node.meta['tensor_meta']
                 output_tensor = TensorNode(fx_node.name, tuple(tensor_meta.shape), str(tensor_meta.dtype))
                 inferno_graph.add_tensor(output_tensor)
                 
-                # Create the operator node
                 op_node = OperatorNode(
                     name=fx_node.name,
                     op_type=op_type,
@@ -138,8 +151,6 @@ class TorchFXParser:
                 inferno_graph.add_node(op_node)
 
             elif fx_node.op == 'output':
-                # This defines the graph's final output(s)
-                # fx_node.args[0] might be a single node or a tuple of nodes
                 output_arg = fx_node.args[0]
                 if isinstance(output_arg, (tuple, list)):
                     output_names = [str(arg.name) for arg in output_arg]
@@ -161,11 +172,17 @@ if __name__ == '__main__':
             super().__init__()
             # We can define weights here, but for tracing they are treated as inputs
             self.weight = torch.nn.Parameter(torch.randn(512, 128))
+            self.linear1 = torch.nn.Linear(128, 10)
+            self.linear2 = torch.nn.Linear(10, 10)
 
         def forward(self, x):
             # The pattern we want our compiler to understand
             x = torch.matmul(x, self.weight)
             x = torch.relu(x)
+            x = F.normalize(x, dim=1)
+            x = self.linear1(x)
+            x = self.linear2(x)
+            x = torch.softmax(x, dim=1)
 
             return x
 
