@@ -139,8 +139,8 @@ def main():
     ax2.legend(loc='upper right')
 
     fig.tight_layout()
-    plt.savefig("inferno_benchmark.png", dpi=300)
-    print("\nBenchmark plot saved to 'inferno_benchmark.png'")
+    plt.savefig("results/inferno_benchmark.png", dpi=300)
+    print("\nBenchmark plot saved to 'results/inferno_benchmark.png'")
     plt.show()
 
 

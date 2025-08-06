@@ -1,4 +1,0 @@
-
-torch.relu:      2.842218 ms
-inferno_relu:    0.181626 ms
-speedup:         15.65x
