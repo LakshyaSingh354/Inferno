@@ -84,6 +84,7 @@ if __name__ == '__main__':
     parser = TorchFXParser()
     example_input = torch.randn(256, 512)
     ir_graph = parser.parse(model, [example_input])
+    ir_graph.print()
 
     # 2. Visualize the ORIGINAL graph
     print("\n--- VISUALIZING ORIGINAL GRAPH ---")
