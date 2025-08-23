@@ -5,14 +5,6 @@ setup(
     name='inferno_fused',
     ext_modules=[
         CUDAExtension(
-            name='inferno_relu',
-            sources=['src/relu.cu'],
-            extra_compile_args={
-                'cxx': [],
-                'nvcc': ['-O2', '-lineinfo']
-            }
-        ),
-        CUDAExtension(
             name="inferno_fused",
             sources=['src/fused_matmul_relu_kernel.cu'],
             libraries=['cublas'],

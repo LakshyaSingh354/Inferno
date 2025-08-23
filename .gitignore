@@ -1,4 +1,13 @@
 build
+dist
 *.so
 *.egg-info
 __pycache__
+*.egg
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw

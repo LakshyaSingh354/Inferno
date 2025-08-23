@@ -129,41 +129,41 @@ cublasHandle_t get_cublas_handle() {
 }
 
 // Wrapper for the main fused function
-// torch::Tensor fused_gemm_relu(torch::Tensor A, torch::Tensor B) {
-//     AT_ASSERTM(A.dim() == 2 && B.dim() == 2, "Inputs must be 2D tensors");
-//     AT_ASSERTM(A.size(1) == B.size(0), "Matrix dimensions mismatch");
-//     AT_ASSERTM(A.is_cuda() && B.is_cuda(), "Inputs must be CUDA tensors");
+torch::Tensor fused_gemm_relu(torch::Tensor A, torch::Tensor B) {
+    AT_ASSERTM(A.dim() == 2 && B.dim() == 2, "Inputs must be 2D tensors");
+    AT_ASSERTM(A.size(1) == B.size(0), "Matrix dimensions mismatch");
+    AT_ASSERTM(A.is_cuda() && B.is_cuda(), "Inputs must be CUDA tensors");
 
-//     auto C = torch::empty({A.size(0), B.size(1)}, A.options());
-//     fused_gemm_relu_forward_cuda(get_cublas_handle(), A, B, C);
-//     return C;
-// }
+    auto C = torch::empty({A.size(0), B.size(1)}, A.options());
+    fused_gemm_relu_forward_cuda(get_cublas_handle(), A, B, C);
+    return C;
+}
 
 // // Wrapper for the GEMM-only debug function
-// torch::Tensor debug_gemm_only(torch::Tensor A, torch::Tensor B) {
-//     AT_ASSERTM(A.dim() == 2 && B.dim() == 2, "Inputs must be 2D tensors");
-//     AT_ASSERTM(A.size(1) == B.size(0), "Matrix dimensions mismatch");
-//     AT_ASSERTM(A.is_cuda() && B.is_cuda(), "Inputs must be CUDA tensors");
+torch::Tensor debug_gemm_only(torch::Tensor A, torch::Tensor B) {
+    AT_ASSERTM(A.dim() == 2 && B.dim() == 2, "Inputs must be 2D tensors");
+    AT_ASSERTM(A.size(1) == B.size(0), "Matrix dimensions mismatch");
+    AT_ASSERTM(A.is_cuda() && B.is_cuda(), "Inputs must be CUDA tensors");
 
-//     auto C = torch::empty({A.size(0), B.size(1)}, A.options());
-//     debug_gemm_only_cuda(get_cublas_handle(), A, B, C);
-//     return C;
-// }
+    auto C = torch::empty({A.size(0), B.size(1)}, A.options());
+    debug_gemm_only_cuda(get_cublas_handle(), A, B, C);
+    return C;
+}
 
 // // Wrapper for the ReLU-only debug function
-// torch::Tensor debug_relu_only(torch::Tensor T) {
-//     AT_ASSERTM(T.is_cuda(), "Input must be a CUDA tensor");
-//     // We operate in-place for this debug function, so we clone the input
-//     // to avoid modifying the original tensor passed from Python.
-//     auto T_out = T.clone();
-//     debug_relu_only_cuda(T_out);
-//     return T_out;
-// }
+torch::Tensor debug_relu_only(torch::Tensor T) {
+    AT_ASSERTM(T.is_cuda(), "Input must be a CUDA tensor");
+    // We operate in-place for this debug function, so we clone the input
+    // to avoid modifying the original tensor passed from Python.
+    auto T_out = T.clone();
+    debug_relu_only_cuda(T_out);
+    return T_out;
+}
 
 
 // // --- pybind11 Module Definition ---
-// PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-//     m.def("fused_gemm_relu", &fused_gemm_relu, "Fused GEMM + ReLU forward (CUDA)");
-//     m.def("debug_gemm_only", &debug_gemm_only, "DEBUG: GEMM only (CUDA)");
-//     m.def("debug_relu_only", &debug_relu_only, "DEBUG: ReLU only (CUDA)");
-// }
+PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
+    m.def("fused_gemm_relu", &fused_gemm_relu, "Fused GEMM + ReLU forward (CUDA)");
+    m.def("debug_gemm_only", &debug_gemm_only, "DEBUG: GEMM only (CUDA)");
+    m.def("debug_relu_only", &debug_relu_only, "DEBUG: ReLU only (CUDA)");
+}
