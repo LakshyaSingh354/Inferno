@@ -71,8 +71,8 @@ if __name__ == '__main__':
     print("="*60)
 
     # --- Setup ---
-    A = torch.randn(256, 512, device='cuda')
-    B = torch.randn(512, 128, device='cuda')
+    A = torch.randn(512, 256, device='cuda')
+    B = torch.randn(256, 512, device='cuda')
 
     # --- Test the compiled function ---
     print("\n[1] Testing the model that SHOULD be fused...")

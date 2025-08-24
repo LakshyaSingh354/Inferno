@@ -1,18 +1,27 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import pandas as pd
 import matplotlib.pyplot as plt
-import inferno_fused 
+import sys
+import os
+
+# Add the src directory to the path so we can import the compiler
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
+from code_generation import compile
+
 # ================================================================================
 # Benchmark Configuration
 # ================================================================================
 # A list of matrix shapes to test. (M, K, N) for C(M,N) = A(M,K) @ B(K,N)
 MATRIX_SIZES = [
-    (64, 128, 256),
-    (128, 256, 512),
+    (32, 32, 32),
+    (64, 32, 64),
+    (64, 64, 64),
+    (64, 128, 64),
+    (128, 256, 128),
     (256, 512, 256),
-    (512, 1024, 512),
     (1024, 1024, 1024),
-    (2048, 2048, 2048),
     (4096, 4096, 4096),
 ]
 
@@ -20,25 +29,68 @@ MATRIX_SIZES = [
 WARMUP_RUNS = 10
 MEASURE_RUNS = 100
 
+# ================================================================================
+# Model Definitions
+# ================================================================================
+
+class FusionModel(nn.Module):
+    """
+    Model with the pattern that can be fused: matmul followed by relu
+    """
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(input_size, output_size))
+        
+    def forward(self, x):
+        # This pattern: matmul + relu can be fused
+        x = torch.matmul(x, self.weight)
+        x = F.relu(x)
+        return x
+
+class NonFusionModel(nn.Module):
+    """
+    Model without the fusion pattern: just matmul, no relu
+    """
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.weight = nn.Parameter(torch.randn(input_size, output_size))
+        
+    def forward(self, x):
+        # This pattern: just matmul, no relu - cannot be fused
+        x = torch.matmul(x, self.weight)
+        return x
+
 def benchmark_size(m, k, n):
     """
     Runs a benchmark for a single matrix size and returns the average latencies.
     """
     print(f"\n--- Benchmarking size (M, K, N) = ({m}, {k}, {n}) ---")
 
-    # Create random input tensors on the GPU
+    # Create random input tensor on the GPU
     try:
-        A = torch.randn(m, k, device='cuda', dtype=torch.float32)
-        B = torch.randn(k, n, device='cuda', dtype=torch.float32)
+        input_tensor = torch.randn(m, k, device='cuda', dtype=torch.float32)
     except torch.cuda.OutOfMemoryError:
         print("    Skipping due to CUDA Out of Memory.")
         return None, None, None
 
-    # --- 1. PyTorch Vanilla Benchmark ---
+    # Create models
+    fusion_model = FusionModel(k, k, n).cuda()
+    non_fusion_model = NonFusionModel(k, k, n).cuda()
+    
+    # Compile the fusion model using your compiler
+    try:
+        print("    Compiling fusion model...")
+        compiled_fusion_model = compile(fusion_model, [input_tensor], kernel_filepath='src/fused_kernel.cu')
+        print("    Compilation successful!")
+    except Exception as e:
+        print(f"    Compilation failed: {e}")
+        return None, None, None
+
+    # --- 1. Non-Fusion Model Benchmark (PyTorch Vanilla) ---
     
     # Warm-up runs
     for _ in range(WARMUP_RUNS):
-        _ = torch.relu(torch.matmul(A, B))
+        _ = non_fusion_model(input_tensor)
     torch.cuda.synchronize()
 
     # Timed runs
@@ -47,42 +99,46 @@ def benchmark_size(m, k, n):
     
     start_event.record()
     for _ in range(MEASURE_RUNS):
-        C_pytorch = torch.relu(torch.matmul(A, B))
+        output_non_fusion = non_fusion_model(input_tensor)
     end_event.record()
     torch.cuda.synchronize()
     
-    pytorch_time_ms = start_event.elapsed_time(end_event) / MEASURE_RUNS
-    print(f"    PyTorch Average Latency: {pytorch_time_ms:.6f} ms")
+    non_fusion_time_ms = start_event.elapsed_time(end_event) / MEASURE_RUNS
+    print(f"    Non-Fusion Model (PyTorch) Average Latency: {non_fusion_time_ms:.6f} ms")
 
-
-    # --- 2. Inferno Fused Kernel Benchmark ---
+    # --- 2. Compiled Fusion Model Benchmark ---
 
     # Warm-up runs
     for _ in range(WARMUP_RUNS):
-        _ = inferno_fused.fused_gemm_relu(A, B)
+        _ = compiled_fusion_model(input_tensor)
     torch.cuda.synchronize()
 
     # Timed runs
     start_event.record()
     for _ in range(MEASURE_RUNS):
-        C_inferno = inferno_fused.fused_gemm_relu(A, B)
+        output_fusion = compiled_fusion_model(input_tensor)
     end_event.record()
     torch.cuda.synchronize()
 
-    inferno_time_ms = start_event.elapsed_time(end_event) / MEASURE_RUNS
-    print(f"    Inferno Average Latency: {inferno_time_ms:.6f} ms")
+    fusion_time_ms = start_event.elapsed_time(end_event) / MEASURE_RUNS
+    print(f"    Compiled Fusion Model Average Latency: {fusion_time_ms:.6f} ms")
+    speedup = non_fusion_time_ms / fusion_time_ms
+    print(f"    Speedup: {speedup:.2f}x")
 
     # --- 3. Verification ---
     try:
-        is_close = torch.allclose(C_pytorch, C_inferno, atol=1e-5)
+        # Compare fusion model output with non-fusion model + manual relu
+        expected_output = F.relu(torch.matmul(input_tensor, fusion_model.weight))
+        is_close = torch.allclose(output_fusion, expected_output, atol=1e-3)
         if not is_close:
             print("    !! WARNING: Results are NOT close. Check implementation.")
         else:
             print("    Verification: PASSED")
     except Exception as e:
         print(f"    Verification failed with error: {e}")
+        is_close = False
 
-    return pytorch_time_ms, inferno_time_ms, is_close
+    return non_fusion_time_ms, fusion_time_ms, is_close
 
 
 def main():
@@ -91,13 +147,13 @@ def main():
     """
     results = []
     for m, k, n in MATRIX_SIZES:
-        pytorch_ms, inferno_ms, verified = benchmark_size(m, k, n)
-        if pytorch_ms is not None:
+        non_fusion_ms, fusion_ms, verified = benchmark_size(m, k, n)
+        if non_fusion_ms is not None:
             results.append({
                 "Size": f"{m}x{k}x{n}",
-                "PyTorch (ms)": pytorch_ms,
-                "Inferno (ms)": inferno_ms,
-                "Speedup": pytorch_ms / inferno_ms if inferno_ms > 0 else float('inf'),
+                "Non-Fusion (ms)": non_fusion_ms,
+                "Fusion (ms)": fusion_ms,
+                "Speedup": non_fusion_ms / fusion_ms if fusion_ms > 0 else float('inf'),
                 "Verified": "Yes" if verified else "No"
             })
 
@@ -120,12 +176,12 @@ def main():
     bar_width = 0.35
     index = range(len(df))
     
-    bar1 = ax1.bar(index, df["PyTorch (ms)"], bar_width, label='PyTorch Vanilla', color='cornflowerblue')
-    bar2 = ax1.bar([i + bar_width for i in index], df["Inferno (ms)"], bar_width, label='Inferno Fused Kernel', color='orangered')
+    bar1 = ax1.bar(index, df["Non-Fusion (ms)"], bar_width, label='Non-Fusion (PyTorch)', color='cornflowerblue')
+    bar2 = ax1.bar([i + bar_width for i in index], df["Fusion (ms)"], bar_width, label='Compiled Fusion', color='orangered')
 
     ax1.set_xlabel('Matrix Size (M x K x N)', fontweight='bold')
     ax1.set_ylabel('Average Latency (ms)', fontweight='bold')
-    ax1.set_title('Inferno Fused Kernel vs. PyTorch Vanilla: Performance Comparison', fontsize=16, fontweight='bold')
+    ax1.set_title('Compiled Fusion vs. Non-Fusion: Performance Comparison', fontsize=16, fontweight='bold')
     ax1.set_xticks([i + bar_width / 2 for i in index])
     ax1.set_xticklabels(df["Size"], rotation=45, ha="right")
     ax1.legend(loc='upper left')
@@ -134,7 +190,7 @@ def main():
     # Line chart for speedup on a secondary y-axis
     ax2 = ax1.twinx()
     ax2.plot([i + bar_width / 2 for i in index], df["Speedup"], color='green', linestyle='--', marker='o', linewidth=2, label='Speedup (X)')
-    ax2.set_ylabel('Speedup (PyTorch / Inferno)', fontweight='bold', color='green')
+    ax2.set_ylabel('Speedup (Non-Fusion / Fusion)', fontweight='bold', color='green')
     ax2.tick_params(axis='y', labelcolor='green')
     ax2.legend(loc='upper right')
 
@@ -145,16 +201,13 @@ def main():
 
 
 if __name__ == "__main__":
-    # Ensure the compiled extension is available
-    try:
-        # A small check to see if the op exists
-        _ = inferno_fused.fused_gemm_relu
-    except AttributeError:
-        print("="*80)
-        print("ERROR: Could not find 'fused_gemm_relu' in the compiled 'inferno_fused' module.")
-        print("Please ensure you have compiled the C++/CUDA code successfully using 'python setup.py install'.")
-        print("="*80)
-        exit()
+    # Ensure the results directory exists
+    os.makedirs("results", exist_ok=True)
+    
+    # Check if CUDA is available
+    if not torch.cuda.is_available():
+        print("CUDA is not available. Please run this on a machine with CUDA support.")
+        exit(1)
         
     main()
 

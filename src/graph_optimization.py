@@ -1,7 +1,6 @@
-from src.graph_creation import Graph, OperatorNode, TorchFXParser
+from graph_creation import Graph, OperatorNode, TorchFXParser
 import torch
 import torch.nn.functional as F
-from scripts.graph_visualize import Visualizer
 
 class Optimizer:
     """
@@ -56,47 +55,3 @@ class Optimizer:
 
         print("--- [Optimizer] Fusion Pass Complete ---")
         return self.graph
-
-
-# ================================================================================
-# DEMONSTRATION
-# ================================================================================
-if __name__ == '__main__':
-    # Define a model with the pattern we want to fuse
-    class MyFusionModel(torch.nn.Module):
-        def __init__(self):
-            super().__init__()
-            self.weight1 = torch.nn.Parameter(torch.randn(512, 128))
-            self.weight2 = torch.nn.Parameter(torch.randn(128, 64))
-
-        def forward(self, x):
-            x = torch.matmul(x, self.weight1) # This matmul...
-            x = F.relu(x)                     # ...and this relu should be fused.
-            
-            x = torch.matmul(x, self.weight2) # This matmul should NOT be fused.
-            y = torch.softmax(x, dim=1)
-            return y
-
-    # --- Run the full pipeline: Parse -> Optimize -> Visualize ---
-    
-    # 1. Parse the model into our IR
-    model = MyFusionModel()
-    parser = TorchFXParser()
-    example_input = torch.randn(256, 512)
-    ir_graph = parser.parse(model, [example_input])
-    ir_graph.print()
-
-    # 2. Visualize the ORIGINAL graph
-    print("\n--- VISUALIZING ORIGINAL GRAPH ---")
-    viz_original = Visualizer(ir_graph)
-    viz_original.visualize('original_graph')
-
-    # 3. Run the optimization pass
-    optimizer = Optimizer(ir_graph)
-    optimized_graph = optimizer.run_fusion_pass()
-    optimized_graph.print()
-
-    # 4. Visualize the OPTIMIZED graph
-    print("\n--- VISUALIZING OPTIMIZED GRAPH ---")
-    viz_optimized = Visualizer(optimized_graph)
-    viz_optimized.visualize('optimized_graph')

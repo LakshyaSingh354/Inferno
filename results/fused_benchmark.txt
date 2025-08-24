@@ -1,0 +1,177 @@
+
+--- Benchmarking size (M, K, N) = (32, 32, 32) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_5d76b56dc38d190623d91b2ee1a49e30 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.084992 ms
+    Compiled Fusion Model Average Latency: 0.066921 ms
+    Speedup: 1.27x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (64, 32, 64) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_fc5a9434f400a0ff0ae42ead4d86fb82 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.086754 ms
+    Compiled Fusion Model Average Latency: 0.069361 ms
+    Speedup: 1.25x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (64, 64, 64) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_fc5a9434f400a0ff0ae42ead4d86fb82 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.069489 ms
+    Compiled Fusion Model Average Latency: 0.048960 ms
+    Speedup: 1.42x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (64, 128, 64) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_fc5a9434f400a0ff0ae42ead4d86fb82 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.058221 ms
+    Compiled Fusion Model Average Latency: 0.044292 ms
+    Speedup: 1.31x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (128, 256, 128) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_d47cee7acfa71e778c0ac6a3d1065ea7 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.084392 ms
+    Compiled Fusion Model Average Latency: 0.082065 ms
+    Speedup: 1.03x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (256, 512, 256) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_0a23f0bc91dc3abd7329d583bcd492db ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.088336 ms
+    Compiled Fusion Model Average Latency: 0.220652 ms
+    Speedup: 0.40x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (1024, 1024, 1024) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_035bddfc91a8f4f20a5daa201e879183 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 0.427558 ms
+    Compiled Fusion Model Average Latency: 2.658377 ms
+    Speedup: 0.16x
+    Verification: PASSED
+
+--- Benchmarking size (M, K, N) = (4096, 4096, 4096) ---
+    Compiling fusion model...
+============================================================
+                  INFERNO COMPILER PIPELINE
+============================================================
+--- [Parser] Parsing model: FusionModel ---
+--- [Parser] Parsing complete. ---
+
+--- [Optimizer] Running MatMul+ReLU Fusion Pass ---
+    🔥 Fusing 'matmul' and 'relu'
+--- [Optimizer] Fusion Pass Complete ---
+--- [JITCompiler] Compilation successful for module: inferno_module_5abfc7755a4123c0427c75b696f209b7 ---
+
+--- [Inferno] Compilation pipeline complete! ---
+    Compilation successful!
+    Non-Fusion Model (PyTorch) Average Latency: 15.824988 ms
+    Compiled Fusion Model Average Latency: 146.301895 ms
+    Speedup: 0.11x
+    Verification: PASSED
+
+
+================================================================================
+                         BENCHMARKING RESULTS
+================================================================================
+          Size  Non-Fusion (ms)  Fusion (ms)  Speedup Verified
+      32x32x32         0.084992     0.066921 1.270037      Yes
+      64x32x64         0.086754     0.069361 1.250755      Yes
+      64x64x64         0.069489     0.048960 1.419303      Yes
+     64x128x64         0.058221     0.044292 1.314491      Yes
+   128x256x128         0.084392     0.082065 1.028360      Yes
+   256x512x256         0.088336     0.220652 0.400340      Yes
+1024x1024x1024         0.427558     2.658377 0.160834      Yes
+4096x4096x4096        15.824988   146.301895 0.108167      Yes
+================================================================================
+
+Benchmark plot saved to 'results/inferno_benchmark.png'

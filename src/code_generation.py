@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from torch.utils.cpp_extension import load
 from typing import List, Dict, Any
 import textwrap
-from src.graph_creation import Graph, TorchFXParser
-from src.graph_optimization import Optimizer
+from graph_creation import Graph, TorchFXParser
+from graph_optimization import Optimizer
 
 
 # ================================================================================
@@ -27,16 +27,16 @@ class CodeGenerator:
             #include <vector>
 
             // Forward declaration of our actual fused kernel implementation
-            void fused_gemm_relu_forward_cuda(cublasHandle_t, torch::Tensor, torch::Tensor, torch::Tensor);
+            void fused_gemm_relu_forward_cuda(torch::Tensor, torch::Tensor, torch::Tensor);
 
             // External declaration of cuBLAS handle (defined in fused kernel)
-            extern cublasHandle_t get_cublas_handle();
+            // extern cublasHandle_t get_cublas_handle();
 
             // The main forward function for the compiled model
             torch::Tensor {graph_name}_forward(
                 {function_args}
             ) {{
-                cublasHandle_t handle = get_cublas_handle();
+                //cublasHandle_t handle = get_cublas_handle();
                 {tensor_declarations}
                 {kernel_calls}
                 return {output_name};
@@ -86,7 +86,7 @@ class CodeGenerator:
             if node.op_type == 'fused_gemm_relu':
                 # Generate the REAL call to our custom C++ function.
                 # The output tensor `relu` is the last argument.
-                calls.append(f"fused_gemm_relu_forward_cuda(handle, {inputs}, {output});")
+                calls.append(f"fused_gemm_relu_forward_cuda({inputs}, {output});")
             elif node.op_type == 'matmul':
                 calls.append(f"{output} = torch::matmul({inputs});")
             else:
@@ -160,8 +160,8 @@ if __name__ == '__main__':
     class MyFusionModel(torch.nn.Module):
         def __init__(self):
             super().__init__()
-            self.weight1 = torch.nn.Parameter(torch.randn(512, 512))
-            self.weight2 = torch.nn.Parameter(torch.randn(512, 512))
+            self.weight1 = torch.nn.Parameter(torch.randn(256, 256))
+            self.weight2 = torch.nn.Parameter(torch.randn(256, 256))
         def forward(self, x):
             x = torch.matmul(x, self.weight1)
             x = F.relu(x)
@@ -170,8 +170,8 @@ if __name__ == '__main__':
 
     # --- Setup ---
     model = MyFusionModel().cuda()
-    example_input = torch.randn(512, 512, device='cuda')
-    KERNEL_FILE = 'src/fused_matmul_relu_kernel.cu'
+    example_input = torch.randn(256, 256, device='cuda')
+    KERNEL_FILE = 'src/fused_kernel.cu'
 
     # --- Compile the model ---
     compiled_model = compile(model, [example_input], kernel_filepath=KERNEL_FILE)
