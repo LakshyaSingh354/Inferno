@@ -31,6 +31,8 @@ __global__ void gemm_relu_kernel(
             As[threadIdx.y * block_size + threadIdx.x] = 0.0f;
         }
 
+        
+
         // Load B tile: B[tile_idx + threadIdx.y, col]
         int B_row = tile_idx + threadIdx.y;
         if (B_row < K && col < N) {

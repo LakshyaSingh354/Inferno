@@ -8,7 +8,7 @@ import os
 
 # Add the src directory to the path so we can import the compiler
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'src'))
-from code_generation import compile
+from inferno import compile_model
 
 # ================================================================================
 # Benchmark Configuration
@@ -33,6 +33,7 @@ MEASURE_RUNS = 100
 # Model Definitions
 # ================================================================================
 
+@compile_model(example_inputs=[torch.randn(256, 256, device='cuda')], kernel_filepath='src/fused_kernel.cu')
 class FusionModel(nn.Module):
     """
     Model with the pattern that can be fused: matmul followed by relu
@@ -75,16 +76,7 @@ def benchmark_size(m, k, n):
 
     # Create models
     fusion_model = FusionModel(k, k, n).cuda()
-    non_fusion_model = NonFusionModel(k, k, n).cuda()
-    
-    # Compile the fusion model using your compiler
-    try:
-        print("    Compiling fusion model...")
-        compiled_fusion_model = compile(fusion_model, [input_tensor], kernel_filepath='src/fused_kernel.cu')
-        print("    Compilation successful!")
-    except Exception as e:
-        print(f"    Compilation failed: {e}")
-        return None, None, None
+    non_fusion_model = NonFusionModel(k, k, n).cuda()   
 
     # --- 1. Non-Fusion Model Benchmark (PyTorch Vanilla) ---
     
@@ -110,13 +102,13 @@ def benchmark_size(m, k, n):
 
     # Warm-up runs
     for _ in range(WARMUP_RUNS):
-        _ = compiled_fusion_model(input_tensor)
+        _ = fusion_model(input_tensor)
     torch.cuda.synchronize()
-
+    
     # Timed runs
     start_event.record()
     for _ in range(MEASURE_RUNS):
-        output_fusion = compiled_fusion_model(input_tensor)
+        output_fusion = fusion_model(input_tensor)
     end_event.record()
     torch.cuda.synchronize()
 
