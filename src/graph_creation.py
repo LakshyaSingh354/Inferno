@@ -83,7 +83,7 @@ class FlatteningTracer(fx.Tracer):
     matmul and add operations.
     """
     def is_leaf_module(self, m: torch.nn.Module, module_qualname: str) -> bool:
-        # If you want to keep some modules as black boxes, you can add them here.
+        # If we want to keep some modules as black boxes, we can add them here.
         # For now, we want to trace into everything, so we always return False.
         return False
 

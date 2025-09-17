@@ -33,14 +33,17 @@ MEASURE_RUNS = 100
 # Model Definitions
 # ================================================================================
 
-@compile_model(example_inputs=[torch.randn(256, 256, device='cuda')], kernel_filepath='src/fused_kernel.cu')
+@compile_model(
+    example_inputs=lambda self: [torch.randn(self.weight.shape[0], self.weight.shape[0], device='cuda', dtype=self.weight.dtype)],
+    kernel_filepath='src/fused_kernel.cu'
+)
 class FusionModel(nn.Module):
     """
     Model with the pattern that can be fused: matmul followed by relu
     """
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        self.weight = nn.Parameter(torch.randn(input_size, output_size))
+        self.weight = nn.Parameter(torch.randn(input_size, output_size, device='cuda', dtype=torch.float32))
         
     def forward(self, x):
         # This pattern: matmul + relu can be fused
@@ -54,7 +57,7 @@ class NonFusionModel(nn.Module):
     """
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
-        self.weight = nn.Parameter(torch.randn(input_size, output_size))
+        self.weight = nn.Parameter(torch.randn(input_size, output_size, device='cuda', dtype=torch.float32))
         
     def forward(self, x):
         # This pattern: just matmul, no relu - cannot be fused

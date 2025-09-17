@@ -3,9 +3,9 @@ import sys
 import hashlib
 import tempfile
 import textwrap
-from typing import List, Dict
 
 import torch
+from typing import List, Dict, Callable, Union
 import torch.nn as nn
 from torch.utils.cpp_extension import load
 
@@ -153,8 +153,14 @@ def compile(model: nn.Module, example_inputs: List[torch.Tensor], kernel_filepat
     print(" " * 18 + "INFERNO COMPILER PIPELINE")
     print("="*60)
     fused_kernel_code = _read_kernel_file(kernel_filepath)
+
+    # Resolve example inputs if a callable was provided
+    resolved_inputs = example_inputs(model) if callable(example_inputs) else example_inputs
+    if not isinstance(resolved_inputs, (list, tuple)):
+        resolved_inputs = [resolved_inputs]
+
     parser = TorchFXParser()
-    ir_graph = parser.parse(model, example_inputs)
+    ir_graph = parser.parse(model, resolved_inputs)
     optimizer = Optimizer(ir_graph)
     optimized_graph = optimizer.run_fusion_pass()
     code_gen = CodeGenerator(optimized_graph)
@@ -172,7 +178,8 @@ def compile(model: nn.Module, example_inputs: List[torch.Tensor], kernel_filepat
 _DEFAULT_KERNEL_FILE = os.path.join(_SRC_DIR, "fused_kernel.cu")
 
 
-def compile_model(example_inputs: List[torch.Tensor], kernel_filepath: str = _DEFAULT_KERNEL_FILE):
+def compile_model(example_inputs: Union[List[torch.Tensor], Callable[[nn.Module], List[torch.Tensor]]],
+                  kernel_filepath: str = _DEFAULT_KERNEL_FILE):
     """
     Class decorator to compile a PyTorch nn.Module using Inferno at instantiation time.
 
@@ -192,12 +199,21 @@ def compile_model(example_inputs: List[torch.Tensor], kernel_filepath: str = _DE
         class InfernoCompiledModel(ModelCls):
             def __init__(self, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                # Perform compilation using the fully constructed model
+                
+                # Store the original forward method from the parent class
+                original_forward = super().forward
+                
+                # Temporarily replace forward with the original implementation
+                # to avoid circular dependency during compilation
+                self.forward = original_forward
+                
+                # Now compile the model
                 self._inferno_compiled = compile(self, example_inputs, kernel_filepath)
-
-            def forward(self, *args, **kwargs):
-                # Delegate forward to the compiled execution engine
-                return self._inferno_compiled(*args, **kwargs)
+                
+                # Replace forward with the compiled version
+                def compiled_forward(*args, **kwargs):
+                    return self._inferno_compiled(*args, **kwargs)
+                self.forward = compiled_forward
 
         InfernoCompiledModel.__name__ = ModelCls.__name__
         InfernoCompiledModel.__qualname__ = ModelCls.__qualname__
