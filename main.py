@@ -104,7 +104,7 @@ def benchmark_size(m, k, n):
     for _ in range(WARMUP_RUNS):
         _ = fusion_model(input_tensor)
     torch.cuda.synchronize()
-    
+
     # Timed runs
     start_event.record()
     for _ in range(MEASURE_RUNS):
