@@ -13,7 +13,8 @@ Inferno is a compiler designed to translate standard torch.nn.Module objects int
 * **🧠 Graph-Level Optimization:** Implements static analysis and graph rewriting passes to improve computational efficiency. A key feature is a MatMul \+ ReLU fusion pass that restructures the computation graph to eliminate memory-bound bottlenecks.  
 * **🔥 Low-Level CUDA Integration:** Generates C++ code that interfaces with both hand-tuned CUDA kernels and highly-optimized libraries like NVIDIA's cuBLAS for critical operations.  
 * **🤖 Just-in-Time Backend:** Utilizes a JIT compilation engine, removing the need for complex, manual build steps by orchestrating the C++/CUDA compilation process dynamically.  
-* **🔬 Quantitative Validation:** Performance improvements are rigorously validated through high-precision latency benchmarks and in-depth hardware-level analysis using the NVIDIA Nsight Compute profiler.
+* **🔬 Quantitative Validation:** Performance improvements are rigorously validated through high-precision latency benchmarks and in-depth hardware-level analysis using the NVIDIA Nsight Compute profiler.  
+* **✅ Constrained-Random Verification:** Includes a comprehensive verification suite for validating kernel numerical stability using post-silicon stress testing methodologies, ensuring correctness across edge cases, boundary conditions, and extreme numerical scenarios.
 
 ## **Performance Analysis**
 
@@ -68,6 +69,29 @@ PyTorch nn.Module \-\> **\[FRONTEND\]** \-\> Inferno IR \-\> **\[BACKEND\]** \-\
 Demonstration of Graph Optimization by Inferno.
 ![Unoptimized Graph](results/original_graph.png) ![Optimized Graph](results/optimized_graph.png)
 
+## **Verification Suite**
+
+Inferno includes a comprehensive **constrained-random verification suite** for validating kernel numerical stability. The suite mimics post-silicon stress testing methodologies used in hardware validation, providing rigorous testing of kernel correctness across a wide range of conditions.
+
+### **Key Features**
+
+* **Constrained-Random Testing:** Generates test cases with controlled constraints to exercise various numerical conditions, edge cases, and boundary conditions.  
+* **Multiple Test Scenarios:** Includes edge case testing, boundary condition testing, stress testing, and random constrained tests.  
+* **Statistical Analysis:** Provides comprehensive error metrics including ULP (Units in Last Place) errors, failure rates, and percentile statistics.  
+* **Post-Silicon Style:** Adopts hardware verification methodologies including coverage-driven testing, statistical analysis, and stress testing.  
+* **Comprehensive Reporting:** Generates detailed JSON reports with error statistics, worst cases, and failure analysis.
+
+### **Quick Start**
+
+```bash
+# Run verification suite
+python verification/run_verification.py --tests 1000
+
+# Run with stress test
+python verification/run_verification.py --tests 100 --stress-duration 300
+```
+
+For detailed documentation, examples, and usage instructions, see the [Verification Suite README](verification/README.md).
 
 ## **Getting Started**
 
