@@ -9,12 +9,12 @@ Inferno is a compiler designed to translate standard torch.nn.Module objects int
 
 ## **Core Features**
 
-* ** End-to-End Compilation:** Provides a complete pipeline for converting nn.Module objects into compiled, high-performance, and runnable modules.  
-* ** Graph-Level Optimization:** Implements static analysis and graph rewriting passes to improve computational efficiency. A key feature is a MatMul \+ ReLU fusion pass that restructures the computation graph to eliminate memory-bound bottlenecks.  
-* ** Low-Level CUDA Integration:** Generates C++ code that interfaces with both hand-tuned CUDA kernels and highly-optimized libraries like NVIDIA's cuBLAS for critical operations.  
-* ** Just-in-Time Backend:** Utilizes a JIT compilation engine, removing the need for complex, manual build steps by orchestrating the C++/CUDA compilation process dynamically.  
-* ** Quantitative Validation:** Performance improvements are rigorously validated through high-precision latency benchmarks and in-depth hardware-level analysis using the NVIDIA Nsight Compute profiler.  
-* ** Constrained-Random Verification:** Includes a comprehensive verification suite for validating kernel numerical stability using post-silicon stress testing methodologies, ensuring correctness across edge cases, boundary conditions, and extreme numerical scenarios.
+* **End-to-End Compilation:** Provides a complete pipeline for converting nn.Module objects into compiled, high-performance, and runnable modules.  
+* **Graph-Level Optimization:** Implements static analysis and graph rewriting passes to improve computational efficiency. A key feature is a MatMul \+ ReLU fusion pass that restructures the computation graph to eliminate memory-bound bottlenecks.  
+* **Low-Level CUDA Integration:** Generates C++ code that interfaces with both hand-tuned CUDA kernels and highly-optimized libraries like NVIDIA's cuBLAS for critical operations.  
+* **Just-in-Time Backend:** Utilizes a JIT compilation engine, removing the need for complex, manual build steps by orchestrating the C++/CUDA compilation process dynamically.  
+* **Quantitative Validation:** Performance improvements are rigorously validated through high-precision latency benchmarks and in-depth hardware-level analysis using the NVIDIA Nsight Compute profiler.  
+* **Constrained-Random Verification:** Includes a comprehensive verification suite for validating kernel numerical stability using post-silicon stress testing methodologies, ensuring correctness across edge cases, boundary conditions, and extreme numerical scenarios.
 
 ## **Performance Analysis**
 
