@@ -1,4 +1,5 @@
 ![Inferno](cover.png)
+🚧 Architecture Update: Rewriting the core engine in C++ using MLIR/LLVM to achieve 10x+ performance gains on matrix kernels. Check out the [inferno-mlir prototype here](https://github.com/LakshyaSingh354/inferno-mlir).
 # **Inferno: An Optimizing Compiler for PyTorch**
 
 ### **A High-Performance, End-to-End Compiler for PyTorch, Developed with C++ and CUDA for Accelerated Inference.**
